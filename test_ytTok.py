@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from datetime import datetime
+from datetime import datetime, timezone
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
@@ -293,6 +293,18 @@ class TestOHLCV(unittest.TestCase):
         self.main_obj.session = MockSession(results)
         df_opt = self.main_obj.fetch_yteth_ohlcv()
         self.assertEqual(df_opt['Volume'].iloc[0], 0)
+
+def test_main_init_end_time_format():
+    main = Main(
+        market_contract="0x00b321d89a8c36b3929f20b7955080baed706d1b",
+        yt_contract="0x4f0b4e6512630480b868e62a8a1d3451b0e9192d",
+        start_time_str="2023-01-01T00:00:00.000Z",
+        network="ethereum"
+    )
+    assert main.end_time_str.endswith(".000Z")
+    dt = datetime.strptime(main.end_time_str, '%Y-%m-%dT%H:%M:%S.000Z').replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+    assert abs((now - dt).total_seconds()) < 10
 
 if __name__ == '__main__':
     unittest.main()
