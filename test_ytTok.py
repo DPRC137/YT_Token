@@ -245,7 +245,7 @@ class MockResponse:
 class MockSession:
     def __init__(self, results):
         self.results = results
-    def get(self, url, headers=None, params=None):
+    def get(self, url, headers=None, params=None, timeout=None, **kwargs):
         return MockResponse(self.results)
 
 class TestOHLCV(unittest.TestCase):
@@ -359,6 +359,62 @@ def test_find_valid_assets_additional_keys():
     result = find_valid_assets(data, 'YT', 'expiry', '0x123')
     assert len(result) == 1
     assert result[0]['extra_key_1'] == 'foo'
+
+def test_ytTok_ast_check_all_get_requests_have_timeout():
+    """AST test ensuring all requests.get or session.get calls in ytTok.py pass timeout parameter."""
+    import ast
+    with open('ytTok.py', 'r') as f:
+        code = f.read()
+
+    tree = ast.parse(code, filename='ytTok.py')
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            if node.func.attr == 'get':
+                kw_names = {kw.arg for kw in node.keywords if kw.arg}
+                if kw_names.intersection({'headers', 'params', 'data', 'json'}):
+                    has_timeout = 'timeout' in kw_names
+                    assert has_timeout, f"HTTP get call at line {node.lineno} is missing 'timeout' parameter"
+
+def test_main_class_methods_pass_timeout():
+    """Test Main class fetch_yteth_ohlcv and fetch_apy pass timeout=10."""
+    from ytTok import Main
+
+    st.cache_data.clear()
+    mock_session = MagicMock()
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        'results': [{'time': '2023-01-01T00:00:00Z', 'open': 1, 'high': 1, 'low': 1, 'close': 1, 'volume': 100}]
+    }
+    mock_session.get.return_value = mock_response
+
+    main_obj = Main(
+        market_contract='0x00b321d89a8c36b3929f20b7955080baed706d1b',
+        yt_contract='0x4f0b4e6512630480b868e62a8a1d3451b0e9192d',
+        start_time_str='2023-01-01T00:00:00.000Z',
+        network='ethereum'
+    )
+    main_obj.session = mock_session
+
+    # Test fetch_yteth_ohlcv
+    st.cache_data.clear()
+    main_obj.fetch_yteth_ohlcv()
+    assert mock_session.get.called
+    _, kwargs = mock_session.get.call_args
+    assert kwargs.get('timeout') == 10
+
+    mock_session.get.reset_mock()
+
+    # Test fetch_apy
+    st.cache_data.clear()
+    mock_response.json.return_value = {
+        'results': 'timestamp,impliedApy,underlyingApy\n1700000000,0.05,0.06'
+    }
+    main_obj.fetch_apy()
+    assert mock_session.get.called
+    _, kwargs = mock_session.get.call_args
+    assert kwargs.get('timeout') == 10
 
 if __name__ == '__main__':
     unittest.main()

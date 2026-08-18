@@ -69,7 +69,7 @@ headers = {
 
 @st.cache_data
 def fetch_assets_data(url):
-    response = session.get(url, headers=headers)
+    response = session.get(url, headers=headers, timeout=10)
     return response.json()
 
 data = fetch_assets_data(url)
@@ -121,8 +121,14 @@ def fetch_yteth_ohlcv_data(url, start_time_str, end_time_str, _session=None):
         "timestamp_start": start_time_str,
         "timestamp_end": end_time_str
     }
-    response = _session.get(url, headers=headers, params=params)
-    results = response.json().get('results', [])
+    response = _session.get(url, headers=headers, params=params, timeout=10)
+    json_data = response.json()
+    if isinstance(json_data, dict):
+        results = json_data.get('results', [])
+    elif isinstance(json_data, list):
+        results = json_data
+    else:
+        results = []
     if not results:
         return pd.DataFrame(columns=['Time', 'Open', 'High', 'Low', 'Close', 'Volume'])
     df = pd.DataFrame(results)
@@ -149,7 +155,7 @@ def fetch_apy_data(url, start_time_str, end_time_str, _session=None):
         "timestamp_start": start_time_str,
         "timestamp_end": end_time_str
     }
-    response = _session.get(url, headers=headers, params=params)
+    response = _session.get(url, headers=headers, params=params, timeout=10)
     if response.status_code == 200:
         data = response.json()
         if 'results' in data:
