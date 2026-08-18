@@ -235,5 +235,64 @@ class TestFetchApy:
         assert df.empty
         mock_st_error.assert_called_once_with("Failed to retrieve data with status code: 500")
 
+class MockResponse:
+    def __init__(self, results):
+        self._results = results
+        self.status_code = 200
+    def json(self):
+        return {'results': self._results}
+
+class MockSession:
+    def __init__(self, results):
+        self.results = results
+    def get(self, url, headers=None, params=None):
+        return MockResponse(self.results)
+
+class TestOHLCV(unittest.TestCase):
+    def setUp(self):
+        st.cache_data.clear()
+        self.main_obj = Main.__new__(Main)
+        self.main_obj.url_ohlcv_yteth = "http://mock"
+        self.main_obj.start_time_str = "2023-01-01T00:00:00.000Z"
+        self.main_obj.end_time_str = "2023-01-02T00:00:00.000Z"
+
+    def test_normal_data(self):
+        st.cache_data.clear()
+        results = [
+            {'time': '2023-01-01T00:00:00.000Z', 'open': 1.0, 'high': 2.0, 'low': 0.5, 'close': 1.5, 'volume': 100},
+            {'time': '2023-01-01T01:00:00+00:00', 'open': 1.5, 'high': 2.5, 'low': 1.0, 'close': 2.0, 'volume': 200}
+        ]
+        self.main_obj.session = MockSession(results)
+        df_opt = self.main_obj.fetch_yteth_ohlcv()
+        self.assertEqual(len(df_opt), 2)
+        self.assertListEqual(list(df_opt.columns), ['Time', 'Open', 'High', 'Low', 'Close', 'Volume'])
+        self.assertEqual(df_opt['Volume'].iloc[0], 100)
+
+    def test_empty_results(self):
+        st.cache_data.clear()
+        results = []
+        self.main_obj.session = MockSession(results)
+        df_opt = self.main_obj.fetch_yteth_ohlcv()
+        self.assertListEqual(list(df_opt.columns), ['Time', 'Open', 'High', 'Low', 'Close', 'Volume'])
+        self.assertTrue(df_opt.empty)
+
+    def test_missing_volume_key(self):
+        st.cache_data.clear()
+        results = [
+            {'time': '2023-01-01T00:00:00.000Z', 'open': 1.0, 'high': 2.0, 'low': 0.5, 'close': 1.5}
+        ]
+        self.main_obj.session = MockSession(results)
+        df_opt = self.main_obj.fetch_yteth_ohlcv()
+        self.assertEqual(df_opt['Volume'].iloc[0], 0)
+
+    def test_none_volume_key(self):
+        st.cache_data.clear()
+        results = [
+            {'time': '2023-01-01T00:00:00.000Z', 'open': 1.0, 'high': 2.0, 'low': 0.5, 'close': 1.5, 'volume': None}
+        ]
+        self.main_obj.session = MockSession(results)
+        df_opt = self.main_obj.fetch_yteth_ohlcv()
+        self.assertEqual(df_opt['Volume'].iloc[0], 0)
+
 if __name__ == '__main__':
     unittest.main()
