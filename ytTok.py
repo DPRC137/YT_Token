@@ -1,3 +1,4 @@
+import re
 import streamlit as st
 import requests
 import pandas as pd
@@ -5,6 +6,12 @@ from datetime import datetime, timezone
 import plotly.graph_objects as go
 import numpy as np
 from io import StringIO
+
+def is_valid_address(address):
+    """Validates if the provided string is a valid EVM contract address (0x followed by 40 hex chars)."""
+    if not isinstance(address, str):
+        return False
+    return bool(re.match(r"^0x[0-9a-fA-F]{40}$", address))
 
 # Set up the session with retries
 session = requests.session()
@@ -94,6 +101,17 @@ class Main:
         self.end_time_str = datetime.utcnow().replace(tzinfo=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
         self.interval = '1h'
 
+        self.url_apy = None
+        self.url_ohlcv_yteth = None
+
+        if not is_valid_address(self.market_contract):
+            st.error("Invalid market contract address format.")
+            return
+
+        if not is_valid_address(self.yt_contract):
+            st.error("Invalid yield token contract address format.")
+            return
+
         network_id = network_ids.get(network.lower())
         if network_id is not None:
             self.url_apy = f'https://api-v2.pendle.finance/core/v1{network_id}/markets/{self.market_contract}/apy-history-1ma'
@@ -102,6 +120,8 @@ class Main:
             st.error("Unsupported network type")
 
     def fetch_yteth_ohlcv(self):
+        if not self.url_ohlcv_yteth:
+            return pd.DataFrame(columns=['Time', 'Open', 'High', 'Low', 'Close', 'Volume'])
         params = {
             "time_frame": "hour",
             "timestamp_start": self.start_time_str,
@@ -117,6 +137,8 @@ class Main:
         return pd.DataFrame(info, columns=['Time', 'Open', 'High', 'Low', 'Close', 'Volume'])
 
     def fetch_apy(self):
+        if not self.url_apy:
+            return pd.DataFrame()
         params = {
             "time_frame": "hour",
             "timestamp_start": self.start_time_str,
@@ -160,7 +182,7 @@ if not df.empty:
     price = df['yt/underlying']
     time_diff_hours = (maturity_time - df['Time']).dt.total_seconds() / 3600
     df['points'] = 1 / price * time_diff_hours * points * underlying_amount * pendle_yt_multiplier
-    h_range = pd.date_range(start=df['Time'].iloc[0], end=maturity_time, freq='H')
+    h_range = pd.date_range(start=df['Time'].iloc[0], end=maturity_time, freq='h')
 
     implied_apy_average = (df['impliedApy'] * df['volume'] / df['volume'].sum()).sum()
 
@@ -244,28 +266,28 @@ if not df.empty:
 
     # Custom Indicators
     if len(df) >= volatility_window:
-        df['volatility'] = df['yt/underlying'].rolling(window=volatility_window).std().fillna(method='bfill')
+        df['volatility'] = df['yt/underlying'].rolling(window=volatility_window).std().bfill()
     else:
         df['volatility'] = np.nan
         st.warning('Volatility window is too large for the available data')
 
-    df['moving_average_20'] = df['yt/underlying'].rolling(window=ma1).mean().fillna(method='bfill')
-    df['moving_average_50'] = df['yt/underlying'].rolling(window=ma2).mean().fillna(method='bfill')
-    df['moving_average_200'] = df['yt/underlying'].rolling(window=ma3).mean().fillna(method='bfill')
+    df['moving_average_20'] = df['yt/underlying'].rolling(window=ma1).mean().bfill()
+    df['moving_average_50'] = df['yt/underlying'].rolling(window=ma2).mean().bfill()
+    df['moving_average_200'] = df['yt/underlying'].rolling(window=ma3).mean().bfill()
 
     if len(df) >= rsi_window:
         delta = df['yt/underlying'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=rsi_window).mean().fillna(method='bfill')
-        loss = (-delta.where(delta < 0, 0)).rolling(window=rsi_window).mean().fillna(method='bfill')
+        gain = (delta.where(delta > 0, 0)).rolling(window=rsi_window).mean().bfill()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=rsi_window).mean().bfill()
         rs = gain / loss
-        df['RSI'] = 100 - (100 / (1 + rs)).fillna(method='bfill')
+        df['RSI'] = (100 - (100 / (1 + rs))).bfill()
     else:
         df['RSI'] = np.nan
 
-    ema12 = df['yt/underlying'].ewm(span=ema1, adjust=False).mean().fillna(method='bfill')
-    ema26 = df['yt/underlying'].ewm(span=ema2, adjust=False).mean().fillna(method='bfill')
+    ema12 = df['yt/underlying'].ewm(span=ema1, adjust=False).mean().bfill()
+    ema26 = df['yt/underlying'].ewm(span=ema2, adjust=False).mean().bfill()
     df['MACD'] = ema12 - ema26
-    df['Signal Line'] = df['MACD'].ewm(span=macd_signal, adjust=False).mean().fillna(method='bfill')
+    df['Signal Line'] = df['MACD'].ewm(span=macd_signal, adjust=False).mean().bfill()
 
     # YT Price Curve Visualization
     add_volatility = st.checkbox('Add Volatility Curve')
