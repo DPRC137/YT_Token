@@ -106,7 +106,6 @@ class Main:
         self.start_time_str = start_time_str
         self.end_time_str = datetime.utcnow().replace(tzinfo=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
         self.interval = '1h'
-
         self.url_apy = None
         self.url_ohlcv_yteth = None
 
@@ -124,7 +123,6 @@ class Main:
             self.url_ohlcv_yteth = f'https://api-v2.pendle.finance/core/v3{network_id}/prices/{self.yt_contract}/ohlcv'
         else:
             st.error("Unsupported network type")
-            st.stop()
 
     def fetch_yteth_ohlcv(self):
         if not self.url_ohlcv_yteth:
@@ -145,6 +143,7 @@ class Main:
 
     def fetch_apy(self):
         if not self.url_apy:
+            st.error("Unsupported network type")
             return pd.DataFrame()
         params = {
             "time_frame": "hour",

@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
+import streamlit as st
 import pandas as pd
 from ytTok import is_valid_address, Main
 
@@ -77,6 +78,55 @@ class TestytTokValidation(unittest.TestCase):
             main.url_ohlcv_yteth,
             f"https://api-v2.pendle.finance/core/v3/1/prices/{yt_contract}/ohlcv"
         )
+
+    def test_fetch_methods_unsupported_network(self):
+        m = object.__new__(Main)
+        m.url_apy = None
+        m.url_ohlcv_yteth = None
+
+        df_ohlcv = m.fetch_yteth_ohlcv()
+        self.assertTrue(df_ohlcv.empty)
+
+        df_apy = m.fetch_apy()
+        self.assertTrue(df_apy.empty)
+
+def test_unsupported_network_stops_execution():
+    with patch("streamlit.selectbox", return_value="invalid_network"), \
+         patch("streamlit.error") as mock_error, \
+         patch("streamlit.stop", side_effect=RuntimeError("st.stop called")) as mock_stop:
+
+        import pytest
+        with pytest.raises(RuntimeError, match="st.stop called"):
+            import importlib
+            import ytTok
+            importlib.reload(ytTok)
+
+        mock_error.assert_called_with("Unsupported network type")
+        mock_stop.assert_called_once()
+
+
+def test_no_valid_assets_stops_execution():
+    mock_response = MagicMock()
+    mock_response.json.return_value = []
+
+    st.cache_data.clear()
+    with patch("streamlit.selectbox", return_value="ethereum"), \
+         patch("requests.session") as mock_session_cls, \
+         patch("streamlit.error") as mock_error, \
+         patch("streamlit.stop", side_effect=RuntimeError("st.stop called")) as mock_stop:
+
+        mock_session_inst = MagicMock()
+        mock_session_inst.get.return_value = mock_response
+        mock_session_cls.return_value = mock_session_inst
+
+        import pytest
+        with pytest.raises(RuntimeError, match="st.stop called"):
+            import importlib
+            import ytTok
+            importlib.reload(ytTok)
+
+        mock_error.assert_called_with("No valid assets found.")
+        mock_stop.assert_called_once()
 
 if __name__ == '__main__':
     unittest.main()
