@@ -67,8 +67,12 @@ headers = {
     "User-Agent": "Mozilla/5.0"
 }
 
-response = session.get(url, headers=headers)
-data = response.json()
+@st.cache_data
+def fetch_assets_data(url):
+    response = session.get(url, headers=headers)
+    return response.json()
+
+data = fetch_assets_data(url)
 
 def find_valid_assets(data, base_type, expiry_key, address):
     valid_assets = [
