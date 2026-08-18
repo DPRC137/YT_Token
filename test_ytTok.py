@@ -128,5 +128,49 @@ def test_no_valid_assets_stops_execution():
         mock_error.assert_called_with("No valid assets found.")
         mock_stop.assert_called_once()
 
+import plotly.graph_objects as go
+from datetime import datetime
+from ytTok import add_purchase_time_annotation
+
+def test_add_purchase_time_annotation():
+    fig = go.Figure()
+    x_val = datetime(2024, 7, 25, 23, 0, 0)
+    y_val = 100.5
+
+    add_purchase_time_annotation(fig, x_val, y_val)
+
+    # Verify vertical line shape was added
+    assert len(fig.layout.shapes) == 1
+    shape = fig.layout.shapes[0]
+    assert shape.type == 'line'
+    assert shape.x0 == x_val
+    assert shape.x1 == x_val
+    assert shape.line.color == 'green'
+    assert shape.line.dash == 'dash'
+    assert shape.line.width == 3
+
+    # Verify annotation was added
+    assert len(fig.layout.annotations) == 1
+    annotation = fig.layout.annotations[0]
+    assert annotation.x == x_val
+    assert annotation.y == y_val
+    assert annotation.text == "YT Purchase Time"
+    assert annotation.showarrow is True
+    assert annotation.arrowhead == 1
+    assert annotation.ax == 20
+    assert annotation.ay == -30
+
+def test_add_purchase_time_annotation_custom_text():
+    fig = go.Figure()
+    x_val = "2024-07-25"
+    y_val = 50
+    custom_text = "Custom Annotation"
+
+    add_purchase_time_annotation(fig, x_val, y_val, text=custom_text)
+
+    assert len(fig.layout.annotations) == 1
+    annotation = fig.layout.annotations[0]
+    assert annotation.text == custom_text
+
 if __name__ == '__main__':
     unittest.main()

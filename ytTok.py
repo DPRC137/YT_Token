@@ -83,6 +83,19 @@ def find_valid_assets(data, base_type, expiry_key, address):
     ]
     return valid_assets
 
+
+def add_purchase_time_annotation(fig, x_value, y_value, text="YT Purchase Time"):
+    fig.add_vline(x=x_value, line_width=3, line_dash="dash", line_color="green")
+    fig.add_annotation(
+        x=x_value,
+        y=y_value,
+        text=text,
+        showarrow=True,
+        arrowhead=1,
+        ax=20,
+        ay=-30
+    )
+
 valid_assets = find_valid_assets(data, 'YT', 'expiry', yt_contract)
 if valid_assets:
     symbol = valid_assets[0]['symbol']
@@ -360,16 +373,7 @@ if not df.empty:
     )
 
     if turn_on_auto_analysis_1:
-        fig.add_vline(x=yt_purchase_time_dt, line_width=3, line_dash="dash", line_color="green")
-        fig.add_annotation(
-            x=yt_purchase_time_dt,
-            y=max(df['yt/underlying']),
-            text="YT Purchase Time",
-            showarrow=True,
-            arrowhead=1,
-            ax=20,
-            ay=-30
-        )
+        add_purchase_time_annotation(fig, yt_purchase_time_dt, max(df['yt/underlying']))
 
     st.plotly_chart(fig)
 
@@ -383,16 +387,7 @@ if not df.empty:
     )
 
     if turn_on_auto_analysis_1:
-        fig.add_vline(x=yt_purchase_time_dt, line_width=3, line_dash="dash", line_color="green")
-        fig.add_annotation(
-            x=yt_purchase_time_dt,
-            y=max(df['yt/underlying']),
-            text="YT Purchase Time",
-            showarrow=True,
-            arrowhead=1,
-            ax=20,
-            ay=-30
-        )
+        add_purchase_time_annotation(fig, yt_purchase_time_dt, max(df['yt/underlying']))
 
     st.plotly_chart(fig)
 
@@ -446,16 +441,7 @@ if not df.empty:
         ))
 
     if turn_on_auto_analysis_1:
-        fig.add_vline(x=yt_purchase_time_dt, line_width=3, line_dash="dash", line_color="green")
-        fig.add_annotation(
-            x=yt_purchase_time_dt,
-            y=max(df['yt/underlying']) * 0.01,
-            text="YT Purchase Time",
-            showarrow=True,
-            arrowhead=1,
-            ax=20,
-            ay=-30
-        )
+        add_purchase_time_annotation(fig, yt_purchase_time_dt, max(df['yt/underlying']) * 0.01)
 
     st.plotly_chart(fig)
 
@@ -473,16 +459,7 @@ if not df.empty:
     )
 
     if turn_on_auto_analysis_1:
-        fig.add_vline(x=yt_purchase_time_dt, line_width=3, line_dash="dash", line_color="green")
-        fig.add_annotation(
-            x=yt_purchase_time_dt,
-            y=max(df['long_yield_apy']),
-            text="YT Purchase Time",
-            showarrow=True,
-            arrowhead=1,
-            ax=20,
-            ay=-30
-        )
+        add_purchase_time_annotation(fig, yt_purchase_time_dt, max(df['long_yield_apy']))
 
     st.plotly_chart(fig)
 
@@ -496,16 +473,7 @@ if not df.empty:
     )
 
     if turn_on_auto_analysis_1:
-        fig.add_vline(x=yt_purchase_time_dt, line_width=3, line_dash="dash", line_color="green")
-        fig.add_annotation(
-            x=yt_purchase_time_dt,
-            y=max(df['weighted_points']),
-            text="YT Purchase Time",
-            showarrow=True,
-            arrowhead=1,
-            ax=20,
-            ay=-30
-        )
+        add_purchase_time_annotation(fig, yt_purchase_time_dt, max(df['weighted_points']))
 
     st.plotly_chart(fig)
 
