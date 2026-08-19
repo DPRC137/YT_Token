@@ -6,10 +6,11 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue.svg)](https://www.python.org/)
 [![Streamlit App](https://img.shields.io/badge/Streamlit-1.30+-FF4B4B.svg)](https://streamlit.io/)
-[![Testing: Pytest](https://img.shields.io/badge/pytest-50%20passed-brightgreen.svg)](https://docs.pytest.org/)
+[![Testing: Pytest](https://img.shields.io/badge/pytest-51%20passed-brightgreen.svg)](https://docs.pytest.org/)
 [![Code Style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Type Checked: Mypy](https://img.shields.io/badge/types-mypy-blue.svg)](http://mypy-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-dprc137-FFDD00.svg?logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/dprc137)
 
 </div>
 
@@ -19,11 +20,11 @@
 
 **YT_Token** is an institutional-grade quantitative analytics framework and interactive dashboard engineered for decentralized fixed-income and yield tokenization markets on [Pendle Finance](https://pendle.finance).
 
-The suite provides real-time fair value curves, implied vs. underlying yield spreads, point farming leverage simulations, and historical execution backtesting across major EVM chains (Ethereum, Arbitrum, Mantle, Base, Optimism, BSC).
+The suite provides real-time fair value curves, implied vs. underlying yield spreads, point farming leverage simulations, dynamic pool discovery, and historical execution backtesting across major EVM chains (Ethereum, Arbitrum, Mantle, Base, Optimism, BSC).
 
 ```mermaid
 flowchart TD
-    A[Pendle v2 Core API] -->|Asset Metadata, APYs, OHLCV| B[Resilient Client & Connection Pool]
+    A[Pendle v2 Core API] -->|Dynamic Markets, APYs, OHLCV| B[Resilient Client & Connection Pool]
     B --> C[Streamlit Cache Layer @st.cache_data]
     C --> D[Quantitative Pricing & Fair Value Engine]
     C --> E[Technical Analysis Engine: RSI, MACD, Volatility]
@@ -41,6 +42,7 @@ flowchart TD
 
 ## 🚀 Key Features
 
+- **⚡ Live Active Pool Discovery**: Dynamically queries active market pools per network sorted by TVL/Liquidity, auto-filling contracts without manual copy-pasting.
 - **💎 Quantitative Fair Value Pricing**: Continuous volume-weighted discounting model identifying overvalued and undervalued Yield Tokens relative to historical market benchmarks.
 - **🌾 Point Farming Leverage & Cost Analysis**: Compute real-time point accrual rates, effective leverage multipliers (including protocol boosts), and the exact cost per point in underlying currency.
 - **📈 Long Yield vs. Implied APY Spread**: Annualized yield differential modeling to assess the expected return of holding Yield Tokens to maturity.
@@ -102,18 +104,18 @@ YT_Token/
 │   └── yt_token/
 │       ├── __init__.py          # Package exports and versioning
 │       ├── config.py            # Chain IDs, API endpoints, and market presets
-│       ├── models.py            # Typed dataclasses (Asset, SimulationResult, MarketSummary)
-│       ├── client.py            # PendleApiClient with session pooling and caching
+│       ├── models.py            # Typed dataclasses (Asset, DiscoveredMarket, SimulationResult)
+│       ├── client.py            # PendleApiClient with dynamic pool discovery & caching
 │       ├── analytics.py         # Pure quantitative finance math and simulation models
 │       ├── indicators.py        # Technical indicators (RSI, MACD, MAs, Volatility)
 │       ├── plotting.py          # Interactive Plotly figures with dark/light themes
 │       └── ui/
 │           ├── __init__.py      # UI component package
-│           ├── sidebar.py       # Sidebar controls, validation, and market presets
+│           ├── sidebar.py       # Dynamic pool dropdown, validation, simulator controls
 │           └── components.py    # Metric cards, tabbed views, tables, and data exports
 ├── tests/
 │   ├── conftest.py              # Shared fixtures and mock HTTP responses
-│   ├── test_client.py           # API client, retry strategy, and address validation tests
+│   ├── test_client.py           # API client, dynamic market fetching, retry strategy tests
 │   ├── test_analytics.py        # Pricing math, fair value, and simulation tests
 │   ├── test_indicators.py       # Technical indicator verification
 │   └── test_plotting.py         # Plotly figure and annotation tests
@@ -174,7 +176,7 @@ The web dashboard will launch at `http://localhost:8501`.
 
 ## 🧪 Testing & Code Quality
 
-Run the complete test suite (50 tests covering quantitative models, API resilience, and technical indicators):
+Run the complete test suite (51 tests covering quantitative models, API resilience, and technical indicators):
 
 ```bash
 # Run pytest with timing metrics
@@ -199,18 +201,17 @@ make lint
 
 ---
 
-## 🛠️ Configuration & Market Presets
+## ☕ Support & Sponsorship
 
-The dashboard includes one-click presets for popular liquid staking and restaking pools:
+If you find this quantitative Yield Token valuation scanner helpful for your DeFi analysis and trading strategies, consider supporting future development:
 
-| Asset | Network | Market Contract | Yield Token (YT) |
-|---|---|---|---|
-| **USDe** (Ethena) | Ethereum | `0x00b321d89a8c36b3929f20b7955080baed706d1b` | `0x4f0b4e6512630480b868e62a8a1d3451b0e9192d` |
-| **eETH** (ether.fi) | Ethereum | `0x7d49e5ab516d4738262d097771e8633fe3d60ec8` | `0x25a95610e206013a7c644ca70ad255b6eb2690ff` |
-| **rsETH** (Kelp DAO) | Arbitrum | `0x8929e71ab85c276bc38ea5f72cf72fa821cb9142` | `0x347c61f2f01f01651e737c76a91176b6efd87508` |
-| **mETH** (Mantle LSP)| Mantle | `0xc27ef647614e7a68e6f1fca63571d87ee9fb01a4` | `0x15f2bfa32b13c72b22f77839352e809315bcda63` |
+<div align="center">
 
-Custom contract addresses on any supported EVM chain can also be entered directly in the sidebar with automatic format validation.
+[![Buy Me A Coffee](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=☕&slug=dprc137&button_colour=FFDD00&font_colour=000000&font_family=Lato&outline_colour=000000&coffee_colour=ffffff)](https://buymeacoffee.com/dprc137)
+
+**[buymeacoffee.com/dprc137](https://buymeacoffee.com/dprc137)**
+
+</div>
 
 ---
 
