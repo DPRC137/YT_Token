@@ -123,12 +123,20 @@ def fetch_yteth_ohlcv_data(url, start_time_str, end_time_str, _session=None):
     }
     response = _session.get(url, headers=headers, params=params)
     results = response.json().get('results', [])
-    info = []
-    for item in results:
-        dt_object = datetime.fromisoformat(item['time'].replace('Z', '+00:00'))
-        volume = item.get('volume', 0)
-        info.append([dt_object, item['open'], item['high'], item['low'], item['close'], volume])
-    return pd.DataFrame(info, columns=['Time', 'Open', 'High', 'Low', 'Close', 'Volume'])
+    if not results:
+        return pd.DataFrame(columns=['Time', 'Open', 'High', 'Low', 'Close', 'Volume'])
+    df = pd.DataFrame(results)
+    df['Time'] = pd.to_datetime(df['time'], format='ISO8601', utc=True)
+    if 'volume' not in df.columns:
+        df['Volume'] = 0
+    else:
+        df['Volume'] = df['volume'].fillna(0)
+    return df.rename(columns={
+        'open': 'Open',
+        'high': 'High',
+        'low': 'Low',
+        'close': 'Close'
+    })[['Time', 'Open', 'High', 'Low', 'Close', 'Volume']]
 
 @st.cache_data
 def fetch_apy_data(url, start_time_str, end_time_str, _session=None):
