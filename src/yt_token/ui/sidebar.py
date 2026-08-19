@@ -202,15 +202,11 @@ def render_sidebar() -> SidebarState | None:
     dark_mode = st.sidebar.toggle("Dark Theme", value=True)
 
     st.sidebar.markdown("---")
-    st.sidebar.markdown(
-        """
-        <div style="text-align: center; margin-top: 10px;">
-            <a href="https://buymeacoffee.com/dprc137" target="_blank" style="text-decoration: none;">
-                <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=dprc137&button_colour=FFDD00&font_colour=000000&font_family=Lato&outline_colour=000000&coffee_colour=ffffff" alt="Buy Me A Coffee" style="width: 100%; max-width: 180px; border-radius: 8px;" />
-            </a>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    st.sidebar.link_button(
+        "☕ Support on Buy Me a Coffee",
+        "https://buymeacoffee.com/dprc137",
+        width="stretch",
+        help="Support the developer & ongoing quantitative model improvements",
     )
 
     return SidebarState(
