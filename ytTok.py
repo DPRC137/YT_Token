@@ -97,6 +97,54 @@ start_time_str = datetime_obj.isoformat(timespec='milliseconds').replace('+00:00
 points = points_per_hour_per_underlying
 mode = 'plotly_dark' if dark_mode else 'plotly_white'
 
+@st.cache_data
+def fetch_yteth_ohlcv_data(url, start_time_str, end_time_str, _session=None):
+    if not url:
+        return pd.DataFrame(columns=['Time', 'Open', 'High', 'Low', 'Close', 'Volume'])
+    if _session is None:
+        _session = session
+    params = {
+        "time_frame": "hour",
+        "timestamp_start": start_time_str,
+        "timestamp_end": end_time_str
+    }
+    response = _session.get(url, headers=headers, params=params)
+    results = response.json().get('results', [])
+    info = []
+    for item in results:
+        dt_object = datetime.fromisoformat(item['time'].replace('Z', '+00:00'))
+        volume = item.get('volume', 0)
+        info.append([dt_object, item['open'], item['high'], item['low'], item['close'], volume])
+    return pd.DataFrame(info, columns=['Time', 'Open', 'High', 'Low', 'Close', 'Volume'])
+
+@st.cache_data
+def fetch_apy_data(url, start_time_str, end_time_str, _session=None):
+    if not url:
+        return pd.DataFrame()
+    if _session is None:
+        _session = session
+    params = {
+        "time_frame": "hour",
+        "timestamp_start": start_time_str,
+        "timestamp_end": end_time_str
+    }
+    response = _session.get(url, headers=headers, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        if 'results' in data:
+            csv_data = data['results']
+            if not csv_data:
+                return pd.DataFrame()
+            df = pd.read_csv(StringIO(csv_data))
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s', utc=True)
+            return df
+        else:
+            st.error("No results found in the API response")
+            return pd.DataFrame()
+    else:
+        st.error(f"Failed to retrieve data with status code: {response.status_code}")
+        return pd.DataFrame()
+
 # Main Class for Data Acquisition and Analysis
 class Main:
     def __init__(self, market_contract, yt_contract, start_time_str, network):
@@ -127,43 +175,13 @@ class Main:
     def fetch_yteth_ohlcv(self):
         if not self.url_ohlcv_yteth:
             return pd.DataFrame(columns=['Time', 'Open', 'High', 'Low', 'Close', 'Volume'])
-        params = {
-            "time_frame": "hour",
-            "timestamp_start": self.start_time_str,
-            "timestamp_end": self.end_time_str
-        }
-        response = self.session.get(self.url_ohlcv_yteth, headers=headers, params=params)
-        results = response.json().get('results', [])
-        info = []
-        for item in results:
-            dt_object = datetime.fromisoformat(item['time'].replace('Z', '+00:00'))
-            volume = item.get('volume', 0)
-            info.append([dt_object, item['open'], item['high'], item['low'], item['close'], volume])
-        return pd.DataFrame(info, columns=['Time', 'Open', 'High', 'Low', 'Close', 'Volume'])
+        return fetch_yteth_ohlcv_data(self.url_ohlcv_yteth, self.start_time_str, self.end_time_str, _session=self.session)
 
     def fetch_apy(self):
         if not self.url_apy:
             st.error("Unsupported network type")
             return pd.DataFrame()
-        params = {
-            "time_frame": "hour",
-            "timestamp_start": self.start_time_str,
-            "timestamp_end": self.end_time_str
-        }
-        response = self.session.get(self.url_apy, headers=headers, params=params)
-        if response.status_code == 200:
-            data = response.json()
-            if 'results' in data:
-                csv_data = data['results']
-                df = pd.read_csv(StringIO(csv_data))
-                df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s', utc=True)
-                return df
-            else:
-                st.error("No results found in the API response")
-                return pd.DataFrame()
-        else:
-            st.error(f"Failed to retrieve data with status code: {response.status_code}")
-            return pd.DataFrame()
+        return fetch_apy_data(self.url_apy, self.start_time_str, self.end_time_str, _session=self.session)
 
     def run(self):
         df = self.fetch_apy()
