@@ -61,6 +61,7 @@ if network_id is not None:
     url = f'https://api-v2.pendle.finance/core/v1{network_id}/assets/all'
 else:
     st.error("Unsupported network type")
+    st.stop()
 
 headers = {
     "User-Agent": "Mozilla/5.0"
@@ -84,6 +85,7 @@ if valid_assets:
     maturity = valid_assets[0]['expiry']
 else:
     st.error("No valid assets found.")
+    st.stop()
 
 # Convert start time to ISO format and make it timezone-aware
 datetime_obj = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
@@ -118,6 +120,7 @@ class Main:
             self.url_ohlcv_yteth = f'https://api-v2.pendle.finance/core/v3{network_id}/prices/{self.yt_contract}/ohlcv'
         else:
             st.error("Unsupported network type")
+            st.stop()
 
     def fetch_yteth_ohlcv(self):
         if not self.url_ohlcv_yteth:
