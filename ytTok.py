@@ -173,7 +173,7 @@ class Main:
         self.market_contract = market_contract
         self.yt_contract = yt_contract
         self.start_time_str = start_time_str
-        self.end_time_str = datetime.utcnow().replace(tzinfo=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        self.end_time_str = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
         self.interval = '1h'
         self.url_apy = None
         self.url_ohlcv_yteth = None
