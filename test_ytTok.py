@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from ytTok import is_valid_address, Main, add_purchase_time_annotation
+from ytTok import is_valid_address, Main, add_purchase_time_annotation, find_valid_assets
 
 class TestytTokValidation(unittest.TestCase):
     def test_is_valid_address_valid(self):
@@ -305,6 +305,60 @@ def test_main_init_end_time_format():
     dt = datetime.strptime(main.end_time_str, '%Y-%m-%dT%H:%M:%S.000Z').replace(tzinfo=timezone.utc)
     now = datetime.now(timezone.utc)
     assert abs((now - dt).total_seconds()) < 10
+
+def test_find_valid_assets_matching_item():
+    data = [
+        {
+            'baseType': 'YT',
+            'address': '0x123',
+            'expiry': '2024-12-31',
+            'symbol': 'TEST'
+        }
+    ]
+    result = find_valid_assets(data, 'YT', 'expiry', '0x123')
+    assert len(result) == 1
+    assert result[0]['symbol'] == 'TEST'
+
+
+def test_find_valid_assets_multiple_items_filtering():
+    data = [
+        {'baseType': 'YT', 'address': '0x123', 'expiry': '2024-12-31', 'name': 'Match'},
+        {'baseType': 'PT', 'address': '0x123', 'expiry': '2024-12-31', 'name': 'Mismatch baseType'},
+        {'baseType': 'YT', 'address': '0x999', 'expiry': '2024-12-31', 'name': 'Mismatch address'},
+        {'baseType': 'YT', 'address': '0x123', 'name': 'Missing expiry_key'},
+    ]
+    result = find_valid_assets(data, 'YT', 'expiry', '0x123')
+    assert len(result) == 1
+    assert result[0]['name'] == 'Match'
+
+
+def test_find_valid_assets_empty_data():
+    result = find_valid_assets([], 'YT', 'expiry', '0x123')
+    assert result == []
+
+
+def test_find_valid_assets_no_matches():
+    data = [
+        {'baseType': 'PT', 'address': '0x123'},
+        {'baseType': 'YT', 'address': '0x456', 'expiry': '2025-01-01'}
+    ]
+    result = find_valid_assets(data, 'YT', 'expiry', '0x789')
+    assert result == []
+
+
+def test_find_valid_assets_additional_keys():
+    data = [
+        {
+            'baseType': 'YT',
+            'address': '0x123',
+            'expiry': '2024-12-31',
+            'extra_key_1': 'foo',
+            'extra_key_2': 123
+        }
+    ]
+    result = find_valid_assets(data, 'YT', 'expiry', '0x123')
+    assert len(result) == 1
+    assert result[0]['extra_key_1'] == 'foo'
 
 if __name__ == '__main__':
     unittest.main()
